@@ -7,8 +7,13 @@
 # include "macros.h"
 
 int parse_input_address(const char *input, struct in_addr *addr, char **display_address) {
+    if (!input || !addr || !display_address) {
+        return (PARSE_ERROR);
+    }
+
     if (inet_aton(input, addr) != 0) {
-        *display_address = inet_ntoa(*addr);
+        const char *parsed_address = inet_ntoa(*addr);
+        strcpy(*display_address, parsed_address); // inet_ntoa returns the underlying static buffer that is overwritten with each subsequent call
         return (PARSE_OK);
     }
 
@@ -17,13 +22,12 @@ int parse_input_address(const char *input, struct in_addr *addr, char **display_
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_RAW;
-    hints.ai_protocol = IPPROTO_ICMP; // Internet Control Message Protocol
 
     if (getaddrinfo(input, NULL, &hints, &res) == 0) {
         struct sockaddr_in *sin = (struct sockaddr_in *)(res->ai_addr);
         *addr = sin->sin_addr;
-        *display_address = inet_ntoa(*addr);
+        const char *parsed_address = inet_ntoa(*addr);
+        strcpy(*display_address, parsed_address); // inet_ntoa returns the underlying static buffer that is overwritten with each subsequent call
         freeaddrinfo(res);
         return (PARSE_OK);
     }

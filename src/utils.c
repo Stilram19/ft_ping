@@ -121,9 +121,10 @@ static size_t	ft_strlcpy(char *dest, const char *src, size_t dstsize)
 
 void errorLogger(char *message, int status) {
     if (message != NULL) {
-        printf("ping: %s\n", message);
+        fprintf(stderr, "ping: %s\n", message);
+    } else {
+        fprintf(stderr, "ping: (NULL)\n");
     }
-
     exit(status);
 }
 

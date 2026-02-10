@@ -6,6 +6,7 @@
 *.ko
 *.obj
 *.elf
+ft_ping
 
 # Linker output
 *.ilk
@@ -21,6 +22,8 @@
 *.a
 *.la
 *.lo
+
+plan.txt
 
 # Shared objects (inc. Windows DLLs)
 *.dll
@@ -53,3 +56,6 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+# draft
+draft*

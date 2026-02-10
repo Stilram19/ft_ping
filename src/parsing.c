@@ -13,7 +13,7 @@ int parse_input_address(const char *input, struct in_addr *addr, char **display_
 
     if (inet_aton(input, addr) != 0) {
         const char *parsed_address = inet_ntoa(*addr);
-        strcpy(*display_address, parsed_address); // inet_ntoa returns the underlying static buffer that is overwritten with each subsequent call
+        strncpy(*display_address, parsed_address, strlen(parsed_address)); // inet_ntoa returns the underlying static buffer that is overwritten with each subsequent call
         return (PARSE_OK);
     }
 
@@ -27,7 +27,7 @@ int parse_input_address(const char *input, struct in_addr *addr, char **display_
         struct sockaddr_in *sin = (struct sockaddr_in *)(res->ai_addr);
         *addr = sin->sin_addr;
         const char *parsed_address = inet_ntoa(*addr);
-        strcpy(*display_address, parsed_address); // inet_ntoa returns the underlying static buffer that is overwritten with each subsequent call
+        strncpy(*display_address, parsed_address, strlen(parsed_address)); // inet_ntoa returns the underlying static buffer that is overwritten with each subsequent call
         freeaddrinfo(res);
         return (PARSE_OK);
     }

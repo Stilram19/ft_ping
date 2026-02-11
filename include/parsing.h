@@ -1,5 +1,5 @@
 #ifndef PARSING_H
-# define PARSING_H
+#define PARSING_H
 
 #include <netinet/in.h>
 
@@ -8,6 +8,6 @@
 // * copies the parsed input address into the pointer pointed to by display_address
 // * '*display_address' must point an allocated block of memory with at least (MAX_IPV4_ADDR_LEN + 1) bytes
 // @return PARSE_ERROR if input is neither an IPv4 address nor a hostname
-int parse_input_address(const char *input, struct in_addr *addr, char **display_address);
+int parse_input_address(const char *input, struct in_addr *addr, char *display_address);
 
 #endif

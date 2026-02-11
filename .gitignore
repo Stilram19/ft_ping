@@ -24,6 +24,8 @@ ft_ping
 *.lo
 
 plan.txt
+notes.txt
+ping
 
 # Shared objects (inc. Windows DLLs)
 *.dll

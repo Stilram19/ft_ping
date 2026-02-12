@@ -36,16 +36,35 @@ void errorLogger(char *program_name, char *message, int status) {
     exit(status);
 }
 
-// (*) messageLogger
+// (*) debugLogger
 
-void debugLogger(char *program_name, char *message) {
+void debugLogger(char *message) {
     if (message != NULL) {
-        printf("%s: %s\n", program_name, message);
+        printf("debug: %s\n", message);
         return ;
     }
-    printf("ping: (NULL)\n");
+    printf("debug: (NULL)\n"); 
 }
 
+// (*) infoLogger 
+
+void infoLogger(char *program_name, char *message) {
+    if (message != NULL) {
+        printf("%s: info: %s\n", program_name, message);
+        return ;
+    }
+    printf("%s: info: (NULL)\n", program_name);
+}
+
+// (*) resultLogger
+
+void resultLogger(char *result) {
+    if (result != NULL) {
+        printf("%s\n", result);
+        return ;
+    }
+    printf("RESULT IS NULL");
+}
 
 // (*) strjoin
 // @brief joins the two strings into a new place in memory

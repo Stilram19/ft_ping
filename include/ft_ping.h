@@ -51,6 +51,10 @@ typedef struct ping_state {
     // unsigned int interval;          // interval between packets (milliseconds)
     int timeout;                       // reply timeout (in seconds)
 
+    int verbose;                        // default is 0 (set to 1 if -v is specified)
+    char *program_name;
+
+    uint8_t *received;                     // lookup to findout given a sequence whether a packet with the same sequence has been already sent
 } ping_state_t;
 
 

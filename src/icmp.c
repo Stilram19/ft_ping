@@ -7,7 +7,6 @@
 
 // @brief calculates the checksum of the ICMP ECHO message 
 // @param request is expected to have all fields set and checksum field is zero
-
 static uint16_t calculateChecksum(icmp_echo_request_t *request) {
     uint32_t sum = 0;
  
@@ -76,7 +75,7 @@ int createIcmpEchoRequestMessage(ping_state_t *ping_state) {
 
     // (*) checksum
 
-    // now we're ready to calculate the checksum
+    // now we're ready to calculate the checksum (all fields are already in network byte order, so checksum is automatically in network byte order)
     ping_state->packet.header.checksum = calculateChecksum(&ping_state->packet); 
 
     return (ICMP_OK);

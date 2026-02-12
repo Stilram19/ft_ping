@@ -43,7 +43,9 @@ int main(int argc, char **argv) {
     int sock_type;
 
     if (createRawIcmpSocket(&sock_fd, &sock_type, argv[0]) == SOCKET_ERROR) {
-        errorLogger(argv[0], ft_strjoin("socket: ", strerror(errno)), EXIT_FAILURE);
+        int saved_errno = errno;
+        const char *err_msg = (saved_errno != 0) ? strerror(saved_errno) : "socket creation error";
+        errorLogger(argv[0], ft_strjoin("socket: ", err_msg), EXIT_FAILURE);
     }
 
     if (sock_type == SOCK_DGRAM) {
@@ -71,7 +73,7 @@ int main(int argc, char **argv) {
         state.packet.data = malloc(data_len);
 
         if (!state.packet.data) {
-            errorLogger(argv[0], strerror(errno),EXIT_FAILURE);
+            errorLogger(argv[0], strerror(errno), EXIT_FAILURE);
         }
     }
 
@@ -82,10 +84,6 @@ int main(int argc, char **argv) {
     if (closeRawIcmpSocket(sock_fd) == SOCKET_ERROR) {
         errorLogger(argv[0], ft_strjoin("socket: ", strerror(errno)), EXIT_FAILURE);
     }
-
-    if (state.packet.data) {
-        free(state.packet.data);
-    }
-    
+ 
     return (0);
 }

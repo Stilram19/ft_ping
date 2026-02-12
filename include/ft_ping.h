@@ -2,6 +2,7 @@
 #define FT_PING_H
 
 #include <netinet/in.h>
+#include <stdint.h>
 
 // ICMP echo header structure
 typedef struct {

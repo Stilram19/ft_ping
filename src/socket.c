@@ -22,6 +22,7 @@ int createPingSocket(int *sock_fd, int *sock_type, char *program_name) {
     if (fd < 0) {
         if (errno == EPERM || errno == EACCES) {
             // fallback to SOCK_DGRAM for unprivileged users (lacking CAP_NET_RAW capability)
+            // this fallback may only work in linux 
             errno = 0;
             fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
 
@@ -90,7 +91,11 @@ int sendIcmpEchoMessage(ping_state_t *state) {
         // partial send
         return (SOCKET_ERROR);
     }
- 
+
+    // increment sequence and number of sent packets
+    state->sequence += 1;
+    state->num_sent += 1;
+
     return (SOCKET_OK);
 }
 

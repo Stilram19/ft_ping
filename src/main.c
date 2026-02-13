@@ -71,8 +71,12 @@ int main(int argc, char **argv) {
     state.verbose = 0;
     state.timeout = timeout;
     state.received = (uint8_t *)received;
+    state.num_recv = 0;
+    state.num_sent = 0;
+    state.num_rept = 0;
     state.packet.data_len = data_len;
     state.packet.data = NULL;
+
     if (data_len) {
         state.packet.data = malloc(data_len);
 

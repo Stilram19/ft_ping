@@ -18,7 +18,7 @@ typedef struct {
     icmp_echo_header_t header;
     uint8_t *data;           // pointer to data
     size_t data_len;         // data length
-} icmp_echo_request_t;
+} icmp_echo_t;
 
 
 
@@ -33,7 +33,7 @@ typedef struct ping_state {
     char *hostname;                     // hostname/IPv4 address input
  
     // packet structure & pre-allocated and sized
-    icmp_echo_request_t packet;        // contains header + data pointer + data length
+    icmp_echo_t packet;        // contains header + data pointer + data length
     size_t packet_size;                // Total packet size (constant = sizeof(icmp_echo_header_t) + packet.data_len)
 
     // Socket configuration
@@ -54,7 +54,7 @@ typedef struct ping_state {
     int verbose;                        // default is 0 (set to 1 if -v is specified)
     char *program_name;
 
-    uint8_t *received;                     // lookup to findout given a sequence whether a packet with the same sequence has been already sent
+    uint8_t *received;                     // given a sequence you get whether an echo reply packet with the same sequence has been already received (duplicate) 
 } ping_state_t;
 
 

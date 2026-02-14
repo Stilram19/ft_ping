@@ -100,7 +100,7 @@ static void handle_echo_reply(ping_state_t *state, struct icmphdr *icmp_header, 
         return;
     }
 
-    // validating the identifier only if the socket type is SOCK_RAW (useless_identification is set to 0)
+    // validating the identifier only if the socket type is SOCK_RAW (useless_identifier is set to 0)
     if (state->useless_identifier == 0 && state->identifier != ntohs(icmp_header->un.echo.id)) {
         infoLogger(state->program_name, "handle_echo_reply: received packet has a different ID (to be ignored)");
         return; // ignore
@@ -128,6 +128,10 @@ static void handle_echo_reply(ping_state_t *state, struct icmphdr *icmp_header, 
         long seconds_diff = reply_time.tv_sec - sent_time.tv_sec; // sent_time fields are not sent in network byte order (so they are fine)
         long useconds_diff = reply_time.tv_usec - sent_time.tv_usec;
 
+        if (useconds_diff < 0) {
+            seconds_diff -= 1;
+            useconds_diff += 1000000;
+        }
         rrt = (seconds_diff * 1000.0) + (useconds_diff / 1000.0);
     }
 
@@ -222,7 +226,7 @@ static void handle_error_message(ping_state_t *state, struct sockaddr_in *saddr,
 
     // check if payload size matches the minimum size of an ip header and the size of icmp header (64 bits of original data)
     if (!data || data_len < sizeof(struct ip)) {
-        infoLogger(state->program_name, "handle_error_message: playload too small to include original ip header!"); 
+        infoLogger(state->program_name, "handle_error_message: payload too small to include original ip header!"); 
         return;
     }
 
@@ -247,9 +251,9 @@ static void handle_error_message(ping_state_t *state, struct sockaddr_in *saddr,
     struct icmphdr orig_icmp;
     memcpy(&orig_icmp, (uint8_t*)data + orig_ip_header_len, sizeof(struct icmphdr));
 
-    // check if the distination of the original message (the error is about) has the same destination as our ping destination
+    // check if the destination of the original message (the error is about) has the same destination as our ping destination
     if (orig_ip.ip_dst.s_addr != state->dest_addr.sin_addr.s_addr) {
-        infoLogger(state->program_name, "handle_error_message: the original ip header has a different distination than ping's destination");
+        infoLogger(state->program_name, "handle_error_message: the original ip header has a different destination than ping's destination");
         return; // ignore
     }
 
@@ -309,7 +313,7 @@ void parseIcmpMessage(ping_state_t *state, void *packet, size_t packet_len, stru
     }
 
     if (*sender_addr_len != sizeof(struct sockaddr_in)) {
-        infoLogger(state->program_name, "parseIcmpMessage: sender's socket address doesn't match the length of struct sockaddr_in (this ping is only handing IPv4)");
+        infoLogger(state->program_name, "parseIcmpMessage: sender's socket address doesn't match the length of struct sockaddr_in (this ping is only handling IPv4)");
         return;
     }
 
@@ -319,6 +323,10 @@ void parseIcmpMessage(ping_state_t *state, void *packet, size_t packet_len, stru
 
     // if sock_type is SOCK_RAW then the ip header is sent in the packet (should be skipped)
     if (state->socket_type == SOCK_RAW) {
+        if (packet_len < sizeof(struct ip)) {
+            debugLogger("parseIcmpMessage: packet_len smaller than minimum IP header size");
+            return;
+        }
         ip_header = (struct ip *)packet;
         ip_header_len = ip_header->ip_hl << 2; // converting from words into bytes (x4)
         if (ip_header->ip_v != 4) {

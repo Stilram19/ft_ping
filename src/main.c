@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
     }
 
     // (*) initialize ping state
-    uint8_t received[MAX_SEQUENCE];
+    uint8_t received[MAX_SEQUENCE + 1];
     struct ping_state state;
 
     state.program_name = argv[0];

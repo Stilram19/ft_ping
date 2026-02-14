@@ -3,7 +3,7 @@
 #include "socket.h"
 #include "icmp.h"
 #include "macros.h"
-#include "errno.h"
+#include <errno.h>
 #include <sys/socket.h>
 #include <time.h>
 #include <unistd.h>
@@ -58,8 +58,10 @@ void start_pinging(ping_state_t *state) {
                 continue;
             }
 
-            // mark ICMP ECHO as sent 
-            count -= 1;
+            // mark ICMP ECHO as sent (only decrement in finite mode)
+            if (!isLoopInfinite && count > 0) {
+                count -= 1;
+            }
         }
 
         // mark ICMP message as not yet received
@@ -77,6 +79,7 @@ void start_pinging(ping_state_t *state) {
             if (count || isLoopInfinite) {
                 waitBetweenPings(state); // wait
             }
+            received = 1; // allow sending the next probe after timeout/error
             continue;
         }
 

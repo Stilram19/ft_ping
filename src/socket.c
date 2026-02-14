@@ -60,7 +60,7 @@ int closePingSocket(int sock_fd) {
 
 int sendIcmpEchoMessage(ping_state_t *state) { 
     if (!state) {
-        debugLogger("sendIcmpEchoMessage: state pointer in NULL");
+        debugLogger("sendIcmpEchoMessage: state pointer is NULL");
         return (SOCKET_ERROR);
     }
 

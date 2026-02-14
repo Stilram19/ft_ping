@@ -50,8 +50,10 @@ typedef struct ping_state {
 
     int   timeout;                       // reply timeout (in seconds)
     float wait;                           // seconds to wait between sending each packet
+    int flood;                          // send ECHO requests as fast as possible and display them as they come
 
     int verbose;                        // default is 0 (set to 1 if -v is specified)
+    int quiet;                           // quiet output. nothing is displayed except the summary lines at startup time and when finished.
     char *program_name;
 
     uint8_t *received;                     // given a sequence you get whether an echo reply packet with the same sequence has been already received (duplicate) 

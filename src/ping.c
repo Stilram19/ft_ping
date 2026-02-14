@@ -91,7 +91,7 @@ void start_pinging(ping_state_t *state) {
         }
 
         // wait between each send (only sleep if the reply was sent)
-        if (received && (count || isLoopInfinite)) {
+        if (!state->flood && received && (count || isLoopInfinite)) {
             waitBetweenPings(state);
         }
     }

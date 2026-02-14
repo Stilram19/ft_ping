@@ -138,18 +138,20 @@ static int handle_echo_reply(ping_state_t *state, struct icmphdr *icmp_header, v
     }
 
     // (*) printing result
-    printf("%zu bytes from %s: icmp_seq=%u", icmp_message_len, state->display_address, packet_sequence);
-    // include ttl only in case of SOCK_RAW
-    if (ttl != 0) {
-        printf(" ttl=%u", ttl);
+    if (state->quiet == 0) {
+        printf("%zu bytes from %s: icmp_seq=%u", icmp_message_len, state->display_address, packet_sequence);
+        // include ttl only in case of SOCK_RAW
+        if (ttl != 0) {
+            printf(" ttl=%u", ttl);
+        }
+        if (rrt >= 0) {
+            printf(" time=%.3f ms", rrt);
+        }
+        if (isDuplicate) {
+            printf (" (DUP!)");
+        }
+        printf("\n");
     }
-    if (rrt >= 0) {
-        printf(" time=%.3f ms", rrt);
-    }
-    if (isDuplicate) {
-        printf (" (DUP!)");
-    }
-    printf("\n");
 
     // packet's sequence is consumed
     state->received[packet_sequence] = 1; // mark sequence as received
@@ -274,12 +276,16 @@ static int handle_error_message(ping_state_t *state, struct sockaddr_in *saddr, 
         return (NETWORK_NOISE); // ignore (this error is for another process)
     }
 
-    printf("From %s icmp_seq=%u", inet_ntoa(saddr->sin_addr), ntohs(orig_icmp.un.echo.sequence));
+    if (state->quiet == 0) {
+        printf("From %s icmp_seq=%u", inet_ntoa(saddr->sin_addr), ntohs(orig_icmp.un.echo.sequence));
+    }
 
     if (icmp_header->type == ICMP_DEST_UNREACH) {
         const char *message = get_unreach_message(icmp_header->code);
 
-        if (message) {
+        if (state->quiet == 0) {
+            return (ICMP_OK);
+        } else if (message) {
             printf(" %s\n", message);
         } else {
             printf(" Destination Unreachable (unknown code: %d)\n", icmp_header->code);
@@ -290,7 +296,9 @@ static int handle_error_message(ping_state_t *state, struct sockaddr_in *saddr, 
     // time exceeded message
     if (icmp_header->type == ICMP_TIME_EXCEEDED) {
         const char *message = get_time_exceeded_message(icmp_header->code);
-        if (message) {
+        if (state->quiet == 0) {
+            return (ICMP_OK);
+        } else if (message) {
             printf(" %s\n", message);
         } else {
             printf(" Time Exceeded (unknown code: %d)\n", icmp_header->code);
@@ -301,7 +309,9 @@ static int handle_error_message(ping_state_t *state, struct sockaddr_in *saddr, 
     // redirect message
     if (icmp_header->type == ICMP_REDIRECT) {
         const char *message = get_redirect_message(icmp_header->code);
-        if (message) {
+        if (state->quiet == 0) {
+            return (ICMP_OK);
+        } else if (message) {
             printf(" %s\n", message); 
         } else {
             printf(" Redirect (Unknown code: %d)\n", icmp_header->code);

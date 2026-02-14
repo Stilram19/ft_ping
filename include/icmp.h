@@ -12,4 +12,7 @@
 // @return returns ICMP_ERROR in case of error, ICMP_OK otherwise
 int createIcmpEchoRequestMessage(ping_state_t *ping_state);
 
+// @brief parses the incoming ICMP message and it either calls the handler of the ICMP message (or type of messages) or ignores the packet
+void parseIcmpMessage(ping_state_t *state, void *packet, size_t packet_len, struct sockaddr *sender_addr, socklen_t *sender_addr_len);
+
 #endif

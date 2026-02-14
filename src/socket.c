@@ -12,7 +12,7 @@
 #include "socket.h"
 #include "utils.h"
 
-int createRawIcmpSocket(int *sock_fd, int *sock_type, char *program_name) {
+int createPingSocket(int *sock_fd, int *sock_type, char *program_name) {
     if (!sock_fd || !sock_type) {
         return (SOCKET_ERROR);
     }
@@ -22,6 +22,7 @@ int createRawIcmpSocket(int *sock_fd, int *sock_type, char *program_name) {
     if (fd < 0) {
         if (errno == EPERM || errno == EACCES) {
             // fallback to SOCK_DGRAM for unprivileged users (lacking CAP_NET_RAW capability)
+            // this fallback may only work in linux 
             errno = 0;
             fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
 
@@ -44,7 +45,7 @@ int createRawIcmpSocket(int *sock_fd, int *sock_type, char *program_name) {
     return (SOCKET_OK);
 }
 
-int closeRawIcmpSocket(int sock_fd) {
+int closePingSocket(int sock_fd) {
     if (sock_fd < 0) {
         return (SOCKET_ERROR);
     }
@@ -63,7 +64,7 @@ int sendIcmpEchoMessage(ping_state_t *state) {
     if (!state) {
         return (SOCKET_ERROR);
     }
-    
+
     // calculating total packet size
     size_t packet_size = sizeof(icmp_echo_header_t) + state->packet.data_len;
     
@@ -90,6 +91,27 @@ int sendIcmpEchoMessage(ping_state_t *state) {
         // partial send
         return (SOCKET_ERROR);
     }
- 
+
+    // clearing the received flag for the sequence of the packet just sent, marking it as not yet received
+    state->received[state->sequence] = 0;
+
+    // increment sequence and number of sent packets for the next transmission
+    state->sequence += 1;
+    state->num_sent += 1;
+
     return (SOCKET_OK);
+}
+
+ssize_t recvMessage(ping_state_t *state, void *buffer, size_t buffer_len, struct sockaddr *sender_addr, socklen_t *sender_addr_len) {
+    if (!state) {
+        return (SOCKET_ERROR);
+    }
+
+    ssize_t ret = recvfrom(state->sock_fd, buffer, buffer_len, 0, sender_addr, sender_addr_len);
+
+    if (ret < 0) {
+        return (SOCKET_ERROR);
+    }
+
+    return (ret);
 }

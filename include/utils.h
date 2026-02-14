@@ -9,7 +9,13 @@ char   *ft_strjoin(char const *s1, char const *s2);
 void   errorLogger(char *program_name, char *message, int status);
 
 // @brief displays messages for debugging
-void   debugLogger(char *program_name, char *message);
+void   debugLogger(char *message);
+
+// @brief displays general info messages
+void   infoLogger(char *program_name, char *message);
+
+// @brief displays ping results
+void   resultLogger(char *result);
 
 // @brief returns current time in milliseconds
 uint32_t get_milliseconds();

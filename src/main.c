@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
         errorLogger(argv[0], ft_strjoin(input, ": Name or service not known"), PING_ERROR);
     }
 
-    debugLogger(argv[0], display_addr);
+    debugLogger(display_addr);
 
 
     struct sockaddr_in saddr;
@@ -42,21 +42,23 @@ int main(int argc, char **argv) {
     int sock_fd;
     int sock_type;
 
-    if (createRawIcmpSocket(&sock_fd, &sock_type, argv[0]) == SOCKET_ERROR) {
+    if (createPingSocket(&sock_fd, &sock_type, argv[0]) == SOCKET_ERROR) {
         int saved_errno = errno;
         const char *err_msg = (saved_errno != 0) ? strerror(saved_errno) : "socket creation error";
         errorLogger(argv[0], ft_strjoin("socket: ", err_msg), EXIT_FAILURE);
     }
 
     if (sock_type == SOCK_DGRAM) {
-        debugLogger(argv[0], "socket type: SOCK_DGRAM");
+        debugLogger("socket type: SOCK_DGRAM");
     } else {
-        debugLogger(argv[0], "socket type: SOCK_RAW");
+        debugLogger("socket type: SOCK_RAW");
     }
 
     // (*) initialize ping state
+    uint8_t received[MAX_SEQUENCE + 1] = {0};
     struct ping_state state;
 
+    state.program_name = argv[0];
     state.identifier = getpid() & 0xFFFF;
     state.sequence = 0;     // will increment for each packet
     state.sock_fd = sock_fd;
@@ -66,9 +68,15 @@ int main(int argc, char **argv) {
     state.display_address = display_addr;
     state.dest_addr = saddr;
     state.count = count;
+    state.verbose = 0;
     state.timeout = timeout;
+    state.received = received;
+    state.num_recv = 0;
+    state.num_sent = 0;
+    state.num_rept = 0;
     state.packet.data_len = data_len;
     state.packet.data = NULL;
+
     if (data_len) {
         state.packet.data = malloc(data_len);
 
@@ -81,7 +89,7 @@ int main(int argc, char **argv) {
     // start_pinging(&state);
 
     // (*) raw ICMP socket closing
-    if (closeRawIcmpSocket(sock_fd) == SOCKET_ERROR) {
+    if (closePingSocket(sock_fd) == SOCKET_ERROR) {
         errorLogger(argv[0], ft_strjoin("socket: ", strerror(errno)), EXIT_FAILURE);
     }
  

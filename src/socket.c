@@ -13,7 +13,8 @@
 #include "utils.h"
 
 int createPingSocket(int *sock_fd, int *sock_type, char *program_name) {
-    if (!sock_fd || !sock_type) {
+    if (!sock_fd || !sock_type || !program_name) {
+        debugLogger("createPingSocket: args pointers cannot be NULL");
         return (SOCKET_ERROR);
     }
 
@@ -57,13 +58,14 @@ int closePingSocket(int sock_fd) {
     return (SOCKET_OK);
 }
 
-int sendIcmpEchoMessage(ping_state_t *state) {
-    // static buffer to avoid repeated heap alloc/free (as this function is called repetitively)
-    static uint8_t packet_buffer[PING_MAX_PACKET_SIZE];
- 
+int sendIcmpEchoMessage(ping_state_t *state) { 
     if (!state) {
+        debugLogger("sendIcmpEchoMessage: state pointer in NULL");
         return (SOCKET_ERROR);
     }
+
+    // static buffer to avoid repeated heap alloc/free (as this function is called repetitively)
+    static uint8_t packet_buffer[PING_MAX_PACKET_SIZE];
 
     // calculating total packet size
     size_t packet_size = sizeof(icmp_echo_header_t) + state->packet.data_len;

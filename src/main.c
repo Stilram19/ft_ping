@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
         errorLogger(argv[0], ft_strjoin(input, ": Name or service not known"), PING_ERROR);
     }
 
-    debugLogger(display_addr);
+    // debugLogger(display_addr);
 
 
     struct sockaddr_in saddr;
@@ -48,11 +48,11 @@ int main(int argc, char **argv) {
         errorLogger(argv[0], ft_strjoin("socket: ", err_msg), EXIT_FAILURE);
     }
 
-    if (sock_type == SOCK_DGRAM) {
-        debugLogger("socket type: SOCK_DGRAM");
-    } else {
-        debugLogger("socket type: SOCK_RAW");
-    }
+    // if (sock_type == SOCK_DGRAM) {
+    //     debugLogger("socket type: SOCK_DGRAM");
+    // } else {
+    //     debugLogger("socket type: SOCK_RAW");
+    // }
 
     // (*) initialize ping state
     uint8_t received[MAX_SEQUENCE + 1] = {0};
@@ -70,6 +70,7 @@ int main(int argc, char **argv) {
     state.count = count;
     state.verbose = 0;
     state.timeout = timeout;
+    state.wait = DEFAULT_PING_WAIT;
     state.received = received;
     state.num_recv = 0;
     state.num_sent = 0;
@@ -86,7 +87,7 @@ int main(int argc, char **argv) {
     }
 
     // (*) start pinging (ping loop)
-    // start_pinging(&state);
+    start_pinging(&state);
 
     // (*) raw ICMP socket closing
     if (closePingSocket(sock_fd) == SOCKET_ERROR) {

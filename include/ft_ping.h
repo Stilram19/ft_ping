@@ -48,8 +48,8 @@ typedef struct ping_state {
     // runtime control
     size_t count;                      // number of packets to send (0 = infinite)
 
-    // unsigned int interval;          // interval between packets (milliseconds)
-    int timeout;                       // reply timeout (in seconds)
+    int   timeout;                       // reply timeout (in seconds)
+    float wait;                           // seconds to wait between sending each packet
 
     int verbose;                        // default is 0 (set to 1 if -v is specified)
     char *program_name;

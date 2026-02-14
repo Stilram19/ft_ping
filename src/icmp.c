@@ -362,7 +362,7 @@ int parseIcmpMessageAndLogResult(ping_state_t *state, void *packet, size_t packe
         // check if the sender's address is the same as the ping destination's address
         // if (state->dest_addr.sin_addr.s_addr != saddr->sin_addr.s_addr) {
         //     debugLogger("parseIcmpMessage: received an ICMP echo reply packet from a different host than our destination (to be ignored)");
-        //     return; // ignore packet
+        //     return (NETWORK_NOISE); // ignore packet
         // }
 
         return (handle_echo_reply(state, &icmp_header, data, data_len, packet_len - ip_header_len, ttl));

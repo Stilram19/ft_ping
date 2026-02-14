@@ -35,7 +35,7 @@ void start_pinging(ping_state_t *state) {
 
     first_ping_log(state);
 
-    int count = state->count;
+    size_t count = state->count;
     int isLoopInfinite = (count == 0); // in inetutils-2.0 implementation (they consider -c 0 as loop infinitely)
     uint8_t buffer[PING_MAX_PACKET_SIZE];
     struct sockaddr sender_addr = {0};
@@ -58,7 +58,7 @@ void start_pinging(ping_state_t *state) {
                 continue;
             }
 
-            // mark ICMP ECHO as sent (only decrement in finite mode)
+            // mark ICMP ECHO as sent
             if (!isLoopInfinite && count > 0) {
                 count -= 1;
             }
@@ -79,7 +79,7 @@ void start_pinging(ping_state_t *state) {
             if (count || isLoopInfinite) {
                 waitBetweenPings(state); // wait
             }
-            received = 1; // allow sending the next probe after timeout/error
+            received = 1;
             continue;
         }
 

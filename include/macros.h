@@ -24,6 +24,6 @@
 #define DEFAULT_PING_COUNT 0
 #define NO_TIMEOUT -1 
 
-#define MAX_SEQUENCE 65535
+#define MAX_SEQUENCE 65536
 
 #endif

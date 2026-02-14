@@ -132,7 +132,7 @@ static void handle_echo_reply(ping_state_t *state, struct icmphdr *icmp_header, 
     }
 
     // (*) printing result
-    printf("%lu bytes from %s: icmp_seq=%u", packet_len, state->display_address, packet_sequence);
+    printf("%zu bytes from %s: icmp_seq=%u", packet_len, state->display_address, packet_sequence);
     // include ttl only in case of SOCK_RAW
     if (ttl != 0) {
         printf(" ttl=%u", ttl);
@@ -141,7 +141,7 @@ static void handle_echo_reply(ping_state_t *state, struct icmphdr *icmp_header, 
         printf(" time=%.3f ms", rrt);
     }
     if (isDuplicate) {
-        printf (" (DUP!)");
+        printf(" (DUP!)");
     }
     printf("\n");
 

@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
     state.count = count;
     state.verbose = 0;
     state.timeout = timeout;
-    state.received = (uint8_t *)received;
+    state.received = received;
     state.num_recv = 0;
     state.num_sent = 0;
     state.num_rept = 0;

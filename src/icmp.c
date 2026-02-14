@@ -85,7 +85,7 @@ int createIcmpEchoRequestMessage(ping_state_t *ping_state) {
 
     // (*) checksum
 
-    // now we're ready to calculate the checksum (all fields are already in network byte order, so checksum is automatically in network byte order)
+    // now we're ready to calculate the checksum
     ping_state->packet.header.checksum = htons(calculateChecksum(&ping_state->packet));
 
     return (ICMP_OK);
@@ -154,6 +154,7 @@ static void handle_echo_reply(ping_state_t *state, struct icmphdr *icmp_header, 
 }
 
 // helper
+// @brief given the icmp code of the ICMP dest unreachable error message, it returns the correspondent result or NULL if no such code is supported
 static const char *get_unreach_message(uint8_t icmp_code) {
     static const char *unreach_messages[] = {
         [ICMP_NET_UNREACH] = "Destination Net Unreachable",
@@ -182,6 +183,7 @@ static const char *get_unreach_message(uint8_t icmp_code) {
 }
 
 // helper
+// @brief given the icmp code of the ICMP redirect error message, it returns the correspondent result or NULL if no such code is supported
 static const char *get_redirect_message(uint8_t icmp_code) {
     static const char *redirect_messages[] = {
         [ICMP_REDIR_NET] = "Redirect Net",
@@ -198,6 +200,7 @@ static const char *get_redirect_message(uint8_t icmp_code) {
 }
 
 // helper
+// @brief given the icmp code of the ICMP dest time exceeded error message, it returns the correspondent result or NULL if no such code is supported
 static const char *get_time_exceeded_message(uint8_t icmp_code) {
     static const char *time_exceeded_messages[] = {
         [ICMP_EXC_TTL] = "TTL count exceeded",
@@ -236,7 +239,7 @@ static void handle_error_message(ping_state_t *state, struct sockaddr_in *saddr,
     size_t orig_ip_header_len = orig_ip.ip_hl << 2;
 
     if (data_len < orig_ip_header_len + sizeof(struct icmphdr)) {
-        infoLogger(state->program_name, "handle_error_message: playload too small to include original ip header and original icmp header (first 64 bits of original data)!");
+        infoLogger(state->program_name, "handle_error_message: payload too small to include original ip header and original icmp header (first 64 bits of original data)!");
         return;
     }
 
@@ -319,7 +322,7 @@ void parseIcmpMessage(ping_state_t *state, void *packet, size_t packet_len, stru
         ip_header = (struct ip *)packet;
         ip_header_len = ip_header->ip_hl << 2; // converting from words into bytes (x4)
         if (ip_header->ip_v != 4) {
-            infoLogger(state->program_name, "parseIcmpMessage: packet send with unsupported ip version (to be ignored)");
+            infoLogger(state->program_name, "parseIcmpMessage: packet sent with unsupported ip version (to be ignored)");
             return; // ignore
         }
         // ip header length should be between 5 and 15 (5 * 4 = 20; 15 * 4 = 60)

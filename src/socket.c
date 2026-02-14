@@ -92,10 +92,10 @@ int sendIcmpEchoMessage(ping_state_t *state) {
         return (SOCKET_ERROR);
     }
 
-    // clearing received sequence to mark the packet with the current sequence as not yet received (it's just been sent)
+    // clearing the received flag for the sequence of the packet just sent, marking it as not yet received
     state->received[state->sequence] = 0;
 
-    // increment sequence and number of sent packets
+    // increment sequence and number of sent packets for the next transmission
     state->sequence += 1;
     state->num_sent += 1;
 

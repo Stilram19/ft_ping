@@ -22,7 +22,8 @@
 // defaults
 #define DEFAULT_DATALEN 56
 #define DEFAULT_PING_COUNT 0
-#define NO_TIMEOUT -1 
+#define NO_TIMEOUT -1
+#define DEFAULT_PING_WAIT 1 // 1 second 
 
 #define MAX_SEQUENCE 65535
 

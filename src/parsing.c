@@ -1,4 +1,5 @@
 #define _DEFAULT_SOURCE
+#include <unistd.h>
 #include <stdio.h>
 #include <limits.h>
 #include <sysexits.h>
@@ -25,15 +26,19 @@ static int is_all_digits(const char *str) {
     return (1);
 }
 
+static void display_version() {
+    printf("ft_ping (GNU inetutils) 2.0");
+}
+
 static void print_help(const char *program_name) {
     printf("Usage: %s [options] <hostname/IP>\n\n", program_name);
     printf("Options:\n");
     printf("  -c <count>    Stop after sending <count> packets\n");
-    printf("  -W <timeout>  Timeout in milliseconds\n");
     printf("  -s <size>     Packet data size (bytes)\n");
     printf("  -v            Verbose output\n");
     printf("  -q            Quiet mode\n");
     printf("  -f            Flood ping (send as fast as possible)\n");
+    printf("  -i <number>   wait number seconds between sending each packet");
     printf("  -h, -?        Show this help message\n");
 }
 
@@ -83,7 +88,7 @@ int parse_options(int argc, char **argv, ping_state_t *state) {
         if (strcmp(arg, "-s") == 0) {
             // Check if there's a next argument
             if (opt_index + 1 >= argc) {
-                errorLogger(argv[0], "-s: option requires an argument", EX_USAGE);
+                errorLogger(argv[0], "-s: option requires an argument\nTry 'ping -h' or 'ping -?' for more information.", EX_USAGE);
             }
  
             char *value_str = argv[++opt_index];
@@ -101,32 +106,10 @@ int parse_options(int argc, char **argv, ping_state_t *state) {
             }
  
             state->packet.data_len = value;
-        } else if (strcmp(arg, "-W") == 0) {
-            // check if there's a next argument
-            if (opt_index + 1 >= argc) {
-                errorLogger(argv[0], "-W: option requires an argument", EX_USAGE);
-            }
-            
-            char *value_str = argv[++opt_index];
-            char *endptr;
-            
-            // check if it's all digits
-            if (!is_all_digits(value_str)) {
-                errorLogger(argv[0], "-W: invalid timeout", EX_USAGE);
-            }
- 
-            ssize_t value = strtol(value_str, &endptr, 10);
- 
-            // check if it's in valid range (reasonable upper bound)
-            if (value < 0 || value > INT_MAX) {
-                errorLogger(argv[0], "-W: value too large", EX_USAGE);
-            }
- 
-            state->timeout = (int)value;
         } else if (strcmp(arg, "-c") == 0) {
             // check if there's a next argument
             if (opt_index + 1 >= argc) {
-                errorLogger(argv[0], "-c: option requires an argument", EX_USAGE);
+                errorLogger(argv[0], "-c: option requires an argument\nTry 'ping -h' or 'ping -?' for more information.", EX_USAGE);
             }
             
             char *value_str = argv[++opt_index];
@@ -136,7 +119,7 @@ int parse_options(int argc, char **argv, ping_state_t *state) {
             if (!is_all_digits(value_str)) {
                 errorLogger(argv[0], "-c: invalid count", EX_USAGE);
             }
-            
+ 
             long value = strtol(value_str, &endptr, 10);
  
             // check for overflow
@@ -145,16 +128,15 @@ int parse_options(int argc, char **argv, ping_state_t *state) {
             }
  
             state->count = (int)value;
-        }
-        else if (strcmp(arg, "-i") == 0) {
+        } else if (strcmp(arg, "-i") == 0) {
             // check if there's a next argument
             if (opt_index + 1 >= argc) {
                 errorLogger(argv[0], "-i: option requires an argument", EX_USAGE);
             }
-            
+
             char *value_str = argv[++opt_index];
             char *endptr;
-            
+
             // parse as float
             float value = strtof(value_str, &endptr);
             
@@ -162,19 +144,35 @@ int parse_options(int argc, char **argv, ping_state_t *state) {
             if (endptr == value_str || *endptr != '\0') {
                 errorLogger(argv[0], "-i: invalid interval", EX_USAGE);
             }
-            
-            // check if it's in valid range
-            if (value < 0.2f) {
+
+            // always reject negative or zero values
+            if (value <= 0.0f) {
                 errorLogger(argv[0], "-i: interval must be positive", EX_USAGE);
             }
+
+            // check minimum interval based on privilege level
+            float min_interval = (geteuid() == 0) ? 0.001 : 0.2f;
  
+            if (value < min_interval) {
+                if (geteuid() != 0) {
+                    errorLogger(argv[0], "-i: interval must be at least 0.2", EX_USAGE);
+                } else {
+                    errorLogger(argv[0], "-i: interval must be at least 0.001", EX_USAGE);
+                }
+            }
+
             state->wait = value;
         } else if (strcmp(arg, "-v") == 0) {
             state->verbose = 1;
+        } else if (strcmp(arg, "-V") == 0) {
+            display_version();
         } else if (strcmp(arg, "-q") == 0) {
             state->verbose = 0;  // quiet mode (opposite of verbose)
             state->quiet = 1;
         } else if (strcmp(arg, "-f") == 0) {
+            if (geteuid() != 0) {
+                errorLogger(argv[0], "-f: only root can use flood ping", EX_NOPERM);
+            }
             state->flood = 1;
         } else if (strcmp(arg, "-h") == 0 || strcmp(arg, "-?") == 0) {
             print_help(argv[0]);

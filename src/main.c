@@ -23,8 +23,7 @@ int main(int argc, char **argv) {
     state.sequence = 0;     // will increment for each packet
     state.count = 0;
     state.verbose = 0;
-    state.quit = 0;
-    state.timeout = NO_TIMEOUT;
+    state.quiet = 0;
     state.wait = DEFAULT_PING_WAIT;
     state.flood = 0;
     state.num_recv = 0;

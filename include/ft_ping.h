@@ -48,7 +48,6 @@ typedef struct ping_state {
     // runtime control
     size_t count;                      // number of packets to send (0 = infinite)
 
-    int   timeout;                       // reply timeout (in seconds)
     float wait;                           // seconds to wait between sending each packet
     int flood;                          // send ECHO requests as fast as possible and display them as they come
 

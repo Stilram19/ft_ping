@@ -9,13 +9,14 @@ INC_DIR		=	include
 
 SRCS		=	$(wildcard ${SRC_DIR}/*.c)
 OBJS		=	$(SRCS:${SRC_DIR}/%.c=${OBJ_DIR}/%.o)
+LDFLAGS		= -lm
 
 .PHONY		:	all clean fclean re run
 
 all			:	${NAME}
 
 ${NAME}		:	${OBJ_DIR} ${OBJS}
-				${CC} ${CFLAGS} ${OBJS} -o ${NAME}
+				${CC} ${CFLAGS} ${OBJS} -o ${NAME} ${LDFLAGS}
 
 ${OBJ_DIR}	:
 				mkdir -p ${OBJ_DIR}

@@ -15,6 +15,8 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 
+extern ping_state_t state;
+
 // @brief calculates the checksum of the ICMP ECHO message 
 // @param request is expected to have all fields set and checksum field is zero
 static uint16_t calculateChecksum(icmp_echo_t *request) {
@@ -50,24 +52,19 @@ static uint16_t calculateChecksum(icmp_echo_t *request) {
 }
 
 
-int createIcmpEchoRequestMessage(ping_state_t *ping_state) {
-    if (!ping_state) {
-        debugLogger("createIcmpEchoRequestMessage: state pointer is NULL");
-        return (ICMP_ERROR);
-    }
-
+int createIcmpEchoRequestMessage() {
     // (*) header
-    ping_state->packet.header.type = ICMP_ECHO;
-    ping_state->packet.header.code = 0;
-    ping_state->packet.header.identifier = htons(ping_state->identifier); // overwritten by the kernel in case of SOCK_DGRAM socket (user lacking privileges)
-    ping_state->packet.header.sequence = htons(ping_state->sequence);
-    ping_state->packet.header.checksum = 0;  // Will be calculated
+    state.packet.header.type = ICMP_ECHO;
+    state.packet.header.code = 0;
+    state.packet.header.identifier = htons(state.identifier); // overwritten by the kernel in case of SOCK_DGRAM socket (user lacking privileges)
+    state.packet.header.sequence = htons(state.sequence);
+    state.packet.header.checksum = 0;  // Will be calculated
 
     // (*) data
-    if (ping_state->packet.data && ping_state->packet.data_len) {
+    if (state.packet.data && state.packet.data_len) {
         size_t off = 0;
-        size_t len = ping_state->packet.data_len;
-        if (ping_state->packet.data_len >= sizeof(struct timeval)) {
+        size_t len = state.packet.data_len;
+        if (state.packet.data_len >= sizeof(struct timeval)) {
             // timestamp
             len -= sizeof(struct timeval);
             off += sizeof(struct timeval);
@@ -75,19 +72,19 @@ int createIcmpEchoRequestMessage(ping_state_t *ping_state) {
             gettimeofday(&tv, NULL);
             tv.tv_sec = tv.tv_sec; // not interpreted by the receiver (so no need to convert it into network byte order)
             tv.tv_usec = tv.tv_usec; // same as above
-            memcpy(ping_state->packet.data, &tv, sizeof(tv));
+            memcpy(state.packet.data, &tv, sizeof(tv));
         }
 
         // filling remaining data with zeros
         for (size_t i = 0; i < len; i++) {
-            ping_state->packet.data[i + off] = 0;
+            state.packet.data[i + off] = 0;
         }
     }
 
     // (*) checksum
 
     // now we're ready to calculate the checksum
-    ping_state->packet.header.checksum = htons(calculateChecksum(&ping_state->packet));
+    state.packet.header.checksum = htons(calculateChecksum(&state.packet));
 
     return (ICMP_OK);
 }
@@ -96,24 +93,24 @@ int createIcmpEchoRequestMessage(ping_state_t *ping_state) {
 // (*) parsing incoming packets
 
 // @returns ICMP_ERROR in case of error, ICMP_OK in case everything went successfully, NETWORK_NOISE in case of the network packet isn't meant for our Process
-static int handle_echo_reply(ping_state_t *state, struct icmphdr *icmp_header, void *data, size_t data_len, size_t icmp_message_len, uint8_t ttl) {
-    if (!icmp_header || !state) {
+static int handle_echo_reply(struct icmphdr *icmp_header, void *data, size_t data_len, size_t icmp_message_len, uint8_t ttl) {
+    if (!icmp_header) {
         debugLogger("handle_echo_reply: pointer args cannot be null");
         return (ICMP_ERROR);
     }
 
     // validating the identifier only if the socket type is SOCK_RAW (useless_identifier is set to 0)
-    if (state->useless_identifier == 0 && state->identifier != ntohs(icmp_header->un.echo.id)) {
-        infoLogger(state->program_name, "handle_echo_reply: received packet has a different ID (to be ignored)");
+    if (state.useless_identifier == 0 && state.identifier != ntohs(icmp_header->un.echo.id)) {
+        infoLogger("handle_echo_reply: received packet has a different ID (to be ignored)");
         return (PARSE_NETWORK_NOISE); // ignore
     }
 
     uint16_t packet_sequence = ntohs(icmp_header->un.echo.sequence);
     int isDuplicate = 0;
 
-    if (state->received[packet_sequence] == 1) {
+    if (state.received[packet_sequence] == 1) {
         isDuplicate = 1;
-        state->num_rept += 1; // increment number of duplicates
+        state.num_rept += 1; // increment number of duplicates
     }
 
     // RRT (round-trip time)
@@ -135,11 +132,27 @@ static int handle_echo_reply(ping_state_t *state, struct icmphdr *icmp_header, v
             useconds_diff += 1000000;
         }
         rrt = (seconds_diff * 1000.0) + (useconds_diff / 1000.0);
+        double rrt_s = seconds_diff + useconds_diff / 1000000.0;
+
+        // update statistics trackers (store in seconds to protect from overflow)
+        state.rrt_sum += rrt_s;
+        state.rrt_sum_sq += rrt_s * rrt_s;
+        if (state.num_recv == 1) {
+            state.rrt_max = rrt_s;
+            state.rrt_min = rrt_s;
+        } else {
+            if (state.rrt_max < rrt_s) {
+                state.rrt_max = rrt_s;
+            }
+            if (rrt_s < state.rrt_min) {
+                state.rrt_min = rrt_s;
+            }
+        }
     }
 
     // (*) printing result
-    if (state->quiet == 0 && state->flood == 0) {
-        printf("%zu bytes from %s: icmp_seq=%u", icmp_message_len, state->display_address, packet_sequence);
+    if (state.quiet == 0 && state.flood == 0) {
+        printf("%zu bytes from %s: icmp_seq=%u", icmp_message_len, state.display_address, packet_sequence);
         // include ttl only in case of SOCK_RAW
         if (ttl != 0) {
             printf(" ttl=%u", ttl);
@@ -154,16 +167,16 @@ static int handle_echo_reply(ping_state_t *state, struct icmphdr *icmp_header, v
     }
 
     // backspace when the packet is received back
-    if (state->flood == 1 && state->quiet == 0) {
+    if (state.flood == 1 && state.quiet == 0) {
         printf("\b");
         fflush(stdout);
     }
 
     // packet's sequence is consumed
-    state->received[packet_sequence] = 1; // mark sequence as received
+    state.received[packet_sequence] = 1; // mark sequence as received
 
     if (!isDuplicate) {
-        state->num_recv += 1; // increment number of received packets
+        state.num_recv += 1; // increment number of received packets
     }
 
     return (PARSE_OK);
@@ -231,15 +244,15 @@ static const char *get_time_exceeded_message(uint8_t icmp_code) {
 }
 
 // @returns ICMP_ERROR in case of error, ICMP_OK in case everything went successfully, NETWORK_NOISE in case of the network packet isn't meant for our Process
-static int handle_error_message(ping_state_t *state, struct sockaddr_in *saddr, void *data, size_t data_len, size_t icmp_message_len, struct icmphdr *icmp_header) {
-    if (!state || !saddr || !icmp_header) {
+static int handle_error_message(struct sockaddr_in *saddr, void *data, size_t data_len, size_t icmp_message_len, struct icmphdr *icmp_header) {
+    if (!saddr || !icmp_header) {
         debugLogger("handle_error_message: pointer args cannot be NULL");
         return (ICMP_ERROR);
     }
 
     // check if payload size matches the minimum size of an ip header and the size of icmp header (64 bits of original data)
     if (!data || data_len < sizeof(struct ip)) {
-        infoLogger(state->program_name, "handle_error_message: payload too small to include original ip header!"); 
+        infoLogger("handle_error_message: payload too small to include original ip header!"); 
         return (PARSE_NETWORK_NOISE);
     }
 
@@ -249,14 +262,14 @@ static int handle_error_message(ping_state_t *state, struct sockaddr_in *saddr, 
 
     // ip header length should be between 5 and 15 (5 * 4 = 20; 15 * 4 = 60)
     if (!(orig_ip.ip_hl >= 5 && orig_ip.ip_hl <= 15)) {
-        infoLogger(state->program_name, "handle_error_message: invalid original IP header length");
+        infoLogger("handle_error_message: invalid original IP header length");
         return (PARSE_NETWORK_NOISE);
     }
 
     size_t orig_ip_header_len = orig_ip.ip_hl << 2;
 
     if (data_len < orig_ip_header_len + sizeof(struct icmphdr)) {
-        infoLogger(state->program_name, "handle_error_message: payload too small to include original ip header and original icmp header (first 64 bits of original data)!");
+        infoLogger("handle_error_message: payload too small to include original ip header and original icmp header (first 64 bits of original data)!");
         return (PARSE_NETWORK_NOISE);
     }
 
@@ -265,33 +278,33 @@ static int handle_error_message(ping_state_t *state, struct sockaddr_in *saddr, 
     memcpy(&orig_icmp, (uint8_t*)data + orig_ip_header_len, sizeof(struct icmphdr));
 
     // check if the destination of the original message (the error is about) has the same destination as our ping destination
-    if (orig_ip.ip_dst.s_addr != state->dest_addr.sin_addr.s_addr) {
-        infoLogger(state->program_name, "handle_error_message: the original ip header has a different destination than ping's destination");
+    if (orig_ip.ip_dst.s_addr != state.dest_addr.sin_addr.s_addr) {
+        infoLogger("handle_error_message: the original ip header has a different destination than ping's destination");
         return (PARSE_NETWORK_NOISE); // ignore
     }
 
     // check if it has the same protocol (ICMP)
     if (orig_ip.ip_p != IPPROTO_ICMP) {
-        infoLogger(state->program_name, "handle_error_message: the original ip header has a different protocol than ICMP");
+        infoLogger("handle_error_message: the original ip header has a different protocol than ICMP");
         return (PARSE_NETWORK_NOISE); // ignore
     }
 
     // check if the identifier is the same
-    if (state->useless_identifier == 0 && ntohs(orig_icmp.un.echo.id) != state->identifier) {
-        infoLogger(state->program_name, "handle_error_message: the original ip header has a different ICMP id");
+    if (state.useless_identifier == 0 && ntohs(orig_icmp.un.echo.id) != state.identifier) {
+        infoLogger("handle_error_message: the original ip header has a different ICMP id");
         return (PARSE_NETWORK_NOISE); // ignore (this error is for another process)
     }
 
-    if (state->quiet == 0 && state->flood == 0) {
+    if (state.quiet == 0 && state.flood == 0) {
         printf("%zu bytes from %s: ", icmp_message_len, inet_ntoa(saddr->sin_addr));
     }
 
     if (icmp_header->type == ICMP_DEST_UNREACH) {
         const char *message = get_unreach_message(icmp_header->code);
 
-        if (state->quiet == 1) {
+        if (state.quiet == 1) {
             return (PARSE_OK);
-        } else if (state->flood == 1) {
+        } else if (state.flood == 1) {
             printf("\b");
             fflush(stdout);
             return (PARSE_OK);
@@ -307,9 +320,9 @@ static int handle_error_message(ping_state_t *state, struct sockaddr_in *saddr, 
     if (icmp_header->type == ICMP_TIME_EXCEEDED) {
         const char *message = get_time_exceeded_message(icmp_header->code);
 
-        if (state->quiet == 1) {
+        if (state.quiet == 1) {
             return (PARSE_OK);
-        } else if (state->flood == 1) {
+        } else if (state.flood == 1) {
             printf("\b");
             fflush(stdout);
             return (PARSE_OK);
@@ -324,9 +337,9 @@ static int handle_error_message(ping_state_t *state, struct sockaddr_in *saddr, 
     // redirect message
     if (icmp_header->type == ICMP_REDIRECT) {
         const char *message = get_redirect_message(icmp_header->code);
-        if (state->quiet == 1) {
+        if (state.quiet == 1) {
             return (PARSE_OK);
-        } else if (state->flood == 1) {
+        } else if (state.flood == 1) {
             printf("\b");
             fflush(stdout);
             return (PARSE_OK);
@@ -340,8 +353,8 @@ static int handle_error_message(ping_state_t *state, struct sockaddr_in *saddr, 
     return (PARSE_NETWORK_NOISE); // ignore any other type
 }
 
-int parseIcmpMessageAndLogResult(ping_state_t *state, void *packet, size_t packet_len, struct sockaddr *sender_addr, socklen_t *sender_addr_len) {
-    if (!state || !packet || !sender_addr || !sender_addr_len) {
+int parseIcmpMessageAndLogResult(void *packet, size_t packet_len, struct sockaddr *sender_addr, socklen_t *sender_addr_len) {
+    if (!packet || !sender_addr || !sender_addr_len) {
         debugLogger("parseIcmpMessage: pointer args cannot be NULL");
         return (ICMP_ERROR);
     }
@@ -356,7 +369,7 @@ int parseIcmpMessageAndLogResult(ping_state_t *state, void *packet, size_t packe
     uint8_t ttl = 0;
 
     // if sock_type is SOCK_RAW then the ip header is sent in the packet (should be skipped)
-    if (state->socket_type == SOCK_RAW) {
+    if (state.socket_type == SOCK_RAW) {
         if (packet_len < sizeof(struct ip)) {
             debugLogger("parseIcmpMessage: packet_len smaller than minimum IP header size");
             return (ICMP_ERROR);
@@ -364,12 +377,12 @@ int parseIcmpMessageAndLogResult(ping_state_t *state, void *packet, size_t packe
         ip_header = (struct ip *)packet;
         ip_header_len = ip_header->ip_hl << 2; // converting from words into bytes (x4)
         if (ip_header->ip_v != 4) {
-            infoLogger(state->program_name, "parseIcmpMessage: packet sent with unsupported ip version (to be ignored)");
+            infoLogger("parseIcmpMessage: packet sent with unsupported ip version (to be ignored)");
             return (PARSE_NETWORK_NOISE); // ignore
         }
         // ip header length should be between 5 and 15 (5 * 4 = 20; 15 * 4 = 60)
         if (!(ip_header->ip_hl >= 5 && ip_header->ip_hl <= 15)) {
-            infoLogger(state->program_name, "parseIcmpMessage: invalid IP header length");
+            infoLogger("parseIcmpMessage: invalid IP header length");
             return (PARSE_NETWORK_NOISE);
         }
         ttl = ip_header->ip_ttl; 
@@ -389,17 +402,17 @@ int parseIcmpMessageAndLogResult(ping_state_t *state, void *packet, size_t packe
 
     if (icmp_header.type == ICMP_ECHOREPLY) {
         // check if the sender's address is the same as the ping destination's address
-        if (state->dest_addr.sin_addr.s_addr != saddr->sin_addr.s_addr) {
+        if (state.dest_addr.sin_addr.s_addr != saddr->sin_addr.s_addr) {
             debugLogger("parseIcmpMessage: received an ICMP echo reply packet from a different host than our destination (to be ignored)");
             return (PARSE_NETWORK_NOISE); // ignore packet
         }
 
-        return (handle_echo_reply(state, &icmp_header, data, data_len, packet_len - ip_header_len, ttl));
+        return (handle_echo_reply(&icmp_header, data, data_len, packet_len - ip_header_len, ttl));
     }
 
     // ICMP error messages are handled and reported by default (unless suppressed by quiet mode)
     if (icmp_header.type == ICMP_DEST_UNREACH || icmp_header.type == ICMP_TIME_EXCEEDED || icmp_header.type == ICMP_REDIRECT) {
-        return (handle_error_message(state, saddr, data, data_len, packet_len - ip_header_len, &icmp_header));
+        return (handle_error_message(saddr, data, data_len, packet_len - ip_header_len, &icmp_header));
     }
 
     // any other message type is to be ignored

@@ -51,6 +51,11 @@ int parse_input_address(const char *input, struct in_addr *addr, char *display_a
     }
 
     if (inet_aton(input, addr) != 0) {
+        // handle special address (0.0.0.0)
+        if (addr->s_addr == 0) {
+            inet_aton("127.0.0.1", addr);
+        }
+
         const char *parsed_address = inet_ntoa(*addr);
         size_t parsed_address_len = strlen(parsed_address);
         strncpy(display_address, parsed_address, parsed_address_len); // inet_ntoa returns the underlying static buffer that is overwritten with each subsequent call
@@ -67,6 +72,12 @@ int parse_input_address(const char *input, struct in_addr *addr, char *display_a
     if (getaddrinfo(input, NULL, &hints, &res) == 0) {
         struct sockaddr_in *sin = (struct sockaddr_in *)(res->ai_addr);
         *addr = sin->sin_addr;
+
+        // handle special address (0.0.0.0)
+        if (addr->s_addr == 0) {
+            inet_aton("127.0.0.1", addr);
+        }
+
         const char *parsed_address = inet_ntoa(*addr);
         size_t parsed_address_len = strlen(parsed_address);
         strncpy(display_address, parsed_address, parsed_address_len); // inet_ntoa returns the underlying static buffer that is overwritten with each subsequent call

@@ -14,6 +14,11 @@
 
 extern ping_state_t state;
 
+static void allow_brodcast(int sock_fd) {
+    int broadcast = 1;
+    setsockopt(sock_fd, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast));
+}
+
 int createPingSocket(int *sock_fd, int *sock_type, char *program_name) {
     if (!sock_fd || !sock_type || !program_name) {
         debugLogger("createPingSocket: args pointers cannot be NULL");
@@ -38,6 +43,7 @@ int createPingSocket(int *sock_fd, int *sock_type, char *program_name) {
 
             *sock_fd = fd;
             *sock_type = SOCK_DGRAM;
+            allow_brodcast(fd);
             return (SOCKET_OK);
         }
         return (SOCKET_ERROR);
@@ -45,6 +51,7 @@ int createPingSocket(int *sock_fd, int *sock_type, char *program_name) {
 
     *sock_fd = fd;
     *sock_type = SOCK_RAW;
+    allow_brodcast(fd);
     return (SOCKET_OK);
 }
 

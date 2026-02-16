@@ -3,9 +3,18 @@
 
 #include "ft_ping.h"
 
-#define ICMP_ERROR -1
-#define ICMP_OK 0
-#define NETWORK_NOISE 1
+// for function return status (general operations)
+typedef enum {
+    ICMP_OK,       // Operation successful
+    ICMP_ERROR,    // Operation failed (malloc, socket error, etc.)
+} icmp_status_t;
+
+// for parsing result status (parsing packets)
+typedef enum {
+    PARSE_OK,           // valid ICMP response (echo reply or error message)
+    PARSE_NETWORK_NOISE, // valid packet but not for us (or corrupt)
+    PARSE_ERROR,        // failed to parse the packet
+} parse_status_t;
 
 // @brief fills the given request with an ICMP packet 
 // @param ping_state takes the ping_state structure where it can find the current sequence, identifier... (useful info when constructing the ICMP header)

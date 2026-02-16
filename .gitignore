@@ -26,6 +26,7 @@ ft_ping
 plan.txt
 notes.txt
 ping
+test.*
 
 # Shared objects (inc. Windows DLLs)
 *.dll

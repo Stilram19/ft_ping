@@ -2,7 +2,7 @@
 #define MACROS_H
 
 #define PARSE_ERROR -1
-#define INVALID_OPTION -2
+
 #define PARSE_OK 0
 
 #define FALSE 0

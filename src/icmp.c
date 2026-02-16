@@ -397,7 +397,7 @@ int parseIcmpMessageAndLogResult(ping_state_t *state, void *packet, size_t packe
         return (handle_echo_reply(state, &icmp_header, data, data_len, packet_len - ip_header_len, ttl));
     }
 
-    // in case of icmp error message (verbose option must be specified)
+    // ICMP error messages are handled and reported by default (unless suppressed by quiet mode)
     if (icmp_header.type == ICMP_DEST_UNREACH || icmp_header.type == ICMP_TIME_EXCEEDED || icmp_header.type == ICMP_REDIRECT) {
         return (handle_error_message(state, saddr, data, data_len, packet_len - ip_header_len, &icmp_header));
     }

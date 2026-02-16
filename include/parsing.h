@@ -12,7 +12,7 @@
 int parse_input_address(const char *input, struct in_addr *addr, char *display_address);
 
 // @brief parses supported options
-// return exits in case of error, otherwise PARSE_OK
+// @return on success, the index of the first non-option argument (typically the host); exits on error and does not return
 int parse_options(int argc, char **argv, ping_state_t *state);
 
 #endif

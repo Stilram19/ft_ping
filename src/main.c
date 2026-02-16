@@ -82,9 +82,7 @@ int main(int argc, char **argv) {
     state.socket_type = sock_type;
     state.useless_identifier = (sock_type == SOCK_DGRAM); // if the created socket's type is SOCK_DGRAM then the kernel will override the ICMP ID (hence useless_identifier)
     state.received = received;
-    state.num_recv = 0;
-    state.num_sent = 0;
-    state.num_rept = 0;
+
     state.packet.data = NULL;
 
     if (state.packet.data_len) {

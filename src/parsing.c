@@ -27,7 +27,7 @@ static int is_all_digits(const char *str) {
 }
 
 static void display_version() {
-    printf("ft_ping (GNU inetutils) 2.0");
+    printf("ft_ping (GNU inetutils) 2.0\n");
 }
 
 static void print_help(const char *program_name) {
@@ -38,7 +38,8 @@ static void print_help(const char *program_name) {
     printf("  -v            Verbose output\n");
     printf("  -q            Quiet mode\n");
     printf("  -f            Flood ping (send as fast as possible)\n");
-    printf("  -i <number>   wait number seconds between sending each packet");
+    printf("  -i <number>   wait number seconds between sending each packet\n");
+    printf("  -V            Display version information\n");
     printf("  -h, -?        Show this help message\n");
 }
 
@@ -77,7 +78,17 @@ int parse_input_address(const char *input, struct in_addr *addr, char *display_a
 
 int parse_options(int argc, char **argv, ping_state_t *state) {
     if (!argv || !state) {
-        errorLogger("./ft_ping", "parse_options: argument pointer cannot be NULL", EXIT_FAILURE);
+        const char *program_name = NULL;
+
+        if (state && state->program_name) {
+            program_name = state->program_name;
+        } else if (argv && argv[0]) {
+            program_name = argv[0];
+        } else {
+            program_name = "ft_ping";
+        }
+
+        errorLogger(program_name, "parse_options: argument pointer cannot be NULL", EXIT_FAILURE);
     }
 
     int opt_index = 1;
@@ -155,7 +166,7 @@ int parse_options(int argc, char **argv, ping_state_t *state) {
  
             if (value < min_interval) {
                 if (geteuid() != 0) {
-                    errorLogger(argv[0], "-i: interval must be at least 0.2", EX_USAGE);
+                    errorLogger(argv[0], "-i: interval must be at least 0.2; smaller intervals require root privileges", EX_USAGE);
                 } else {
                     errorLogger(argv[0], "-i: interval must be at least 0.001", EX_USAGE);
                 }

@@ -11,7 +11,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
-// @param sleep wait in seconds
+// @param wait wait in seconds
 static void waitBetweenPings(float wait) {
     struct timespec ts;
     ts.tv_sec = (time_t)wait;
@@ -62,7 +62,7 @@ void start_pinging(ping_state_t *state) {
             count -= 1;
         }
 
-        // when flood mode is on, log '.' after echo ECHO REQUEST message is sent
+        // when flood mode is on, log '.' after the ECHO REQUEST message is sent
         if (state->quiet == 0 && state->flood == 1) {
             printf(".");
             fflush(stdout);

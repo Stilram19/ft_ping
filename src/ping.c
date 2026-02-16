@@ -41,8 +41,9 @@ void start_pinging(ping_state_t *state) {
     int isLoopInfinite = (count == 0); // in inetutils-2.0 implementation (they consider -c 0 as loop infinitely)
     uint8_t buffer[PING_MAX_PACKET_SIZE];
     float wait_interval = (state->flood == 1) ? 0.01 : state->wait; // interval (in seconds) to wait between each two sends
+    int received = 0;
 
-    while (count || isLoopInfinite) {
+    while (count || isLoopInfinite || !received) {
         // create ICMP ECHO request message
         if (createIcmpEchoRequestMessage(state) == ICMP_ERROR) {
             infoLogger(state->program_name, "Error while creating ICMP echo request message");
@@ -51,7 +52,7 @@ void start_pinging(ping_state_t *state) {
         }
 
         // send ICMP ECHO request message to destination
-        if (sendIcmpEchoMessage(state) == SOCKET_ERROR) {
+        if ((count || isLoopInfinite) && sendIcmpEchoMessage(state) == SOCKET_ERROR) {
             infoLogger(state->program_name, "Error while sending ICMP echo request");
             waitBetweenPings(state->wait); // wait
             continue;
@@ -72,7 +73,7 @@ void start_pinging(ping_state_t *state) {
         struct timespec start_time, current_time;
         clock_gettime(CLOCK_MONOTONIC, &start_time);
 
-        int received = 0;
+        received = 0;
 
         while (1) {
             // calculate elapsed time since we sent the packet
@@ -86,10 +87,10 @@ void start_pinging(ping_state_t *state) {
 
             struct timeval select_timeout;
             select_timeout.tv_sec = 0;
-            select_timeout.tv_usec = 30000;
+            select_timeout.tv_usec = 40000;
 
             if (state->flood == 1) {
-                select_timeout.tv_usec = 10000;
+                select_timeout.tv_usec = 11000;
             }
 
             fd_set read_fds;

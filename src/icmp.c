@@ -132,20 +132,23 @@ static int handle_echo_reply(struct icmphdr *icmp_header, void *data, size_t dat
             useconds_diff += 1000000;
         }
         rrt = (seconds_diff * 1000.0) + (useconds_diff / 1000.0);
-        double rrt_s = seconds_diff + useconds_diff / 1000000.0;
 
-        // update statistics trackers (store in seconds to protect from overflow)
-        state.rrt_sum += rrt_s;
-        state.rrt_sum_sq += rrt_s * rrt_s;
-        if (state.num_recv == 0) {
-            state.rrt_max = rrt_s;
-            state.rrt_min = rrt_s;
-        } else {
-            if (state.rrt_max < rrt_s) {
+        if (!isDuplicate) {
+            // update statistics trackers (store in seconds to protect from overflow)
+            double rrt_s = seconds_diff + useconds_diff / 1000000.0;
+
+            state.rrt_sum += rrt_s;
+            state.rrt_sum_sq += rrt_s * rrt_s;
+            if (state.num_recv == 0) {
                 state.rrt_max = rrt_s;
-            }
-            if (rrt_s < state.rrt_min) {
                 state.rrt_min = rrt_s;
+            } else {
+                if (state.rrt_max < rrt_s) {
+                    state.rrt_max = rrt_s;
+                }
+                if (rrt_s < state.rrt_min) {
+                    state.rrt_min = rrt_s;
+                }
             }
         }
     }

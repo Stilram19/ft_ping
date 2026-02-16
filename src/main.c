@@ -2,7 +2,10 @@
 #include "macros.h"
 #include "socket.h"
 #include "ft_ping.h"
+#include "statistics.h"
 #include "utils.h"
+#include <float.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <netinet/in.h>
@@ -10,14 +13,19 @@
 #include <sysexits.h>
 #include <unistd.h>
 
+ping_state_t state;
+
 int main(int argc, char **argv) {
+    state.program_name = argv[0];
     if (argc == 1) {
-        errorLogger(argv[0], "missing host operand\nTry './ft_ping -h' for more information.", EX_USAGE);
+        errorLogger("missing host operand\nTry './ft_ping -h' for more information.", EX_USAGE);
     }
 
-    // (*) input parsing
-    struct ping_state state;
+    signal(SIGINT, signal_handler);
 
+    // (*) input parsing
+
+    // global state initialization
     state.program_name = argv[0];
     state.identifier = getpid() & 0xFFFF;
     state.sequence = 0;     // will increment for each packet
@@ -30,20 +38,24 @@ int main(int argc, char **argv) {
     state.num_sent = 0;
     state.num_rept = 0;
     state.packet.data_len = DEFAULT_DATALEN;
+    state.rrt_max = 0.0;
+    state.rrt_min = DBL_MAX;
+    state.rrt_sum_sq = 0.0;
+    state.rrt_sum = 0.0;
 
     char display_addr[MAX_IPV4_ADDR_LEN + 1] = {};
 
-    int host_index = parse_options(argc, argv, &state);
+    int host_index = parse_options(argc, argv);
 
     if (host_index >= argc) {
-        errorLogger(argv[0], "unknown host", EXIT_FAILURE);
+        errorLogger("unknown host", EXIT_FAILURE);
     }
 
     struct in_addr addr;
 
     char *input = argv[host_index];
     if (parse_input_address(input, &addr, display_addr) == PARSE_ERROR) {
-        errorLogger(argv[0], "unknown host", EXIT_FAILURE);
+        errorLogger("unknown host", EXIT_FAILURE);
     }
 
     // debugLogger(display_addr);
@@ -66,14 +78,8 @@ int main(int argc, char **argv) {
     if (createPingSocket(&sock_fd, &sock_type, argv[0]) == SOCKET_ERROR) {
         int saved_errno = errno;
         const char *err_msg = (saved_errno != 0) ? strerror(saved_errno) : "socket creation error";
-        errorLogger(argv[0], ft_strjoin("socket: ", err_msg), EXIT_FAILURE);
+        errorLogger(ft_strjoin("socket: ", err_msg), EXIT_FAILURE);
     }
-
-    // if (sock_type == SOCK_DGRAM) {
-    //     debugLogger("socket type: SOCK_DGRAM");
-    // } else {
-    //     debugLogger("socket type: SOCK_RAW");
-    // }
 
     // (*) initialize ping state
     uint8_t received[MAX_SEQUENCE + 1] = {0};
@@ -89,16 +95,16 @@ int main(int argc, char **argv) {
         state.packet.data = malloc(state.packet.data_len);
 
         if (!state.packet.data) {
-            errorLogger(argv[0], strerror(errno), EXIT_FAILURE);
+            errorLogger(strerror(errno), EXIT_FAILURE);
         }
     }
 
     // (*) start pinging (ping loop)
-    start_pinging(&state);
+    start_pinging();
 
     // (*) raw ICMP socket closing
     if (closePingSocket(sock_fd) == SOCKET_ERROR) {
-        errorLogger(argv[0], ft_strjoin("socket: ", strerror(errno)), EXIT_FAILURE);
+        errorLogger(ft_strjoin("socket: ", strerror(errno)), EXIT_FAILURE);
     }
  
     return (0);

@@ -1,7 +1,6 @@
 #ifndef PARSING_H
 #define PARSING_H
 
-#include "ft_ping.h"
 #include <netinet/in.h>
 
 // @brief parses the input IPv4 (address / hostname);
@@ -13,6 +12,6 @@ int parse_input_address(const char *input, struct in_addr *addr, char *display_a
 
 // @brief parses supported options
 // @return on success, the index of the first non-option argument (typically the host); exits on error and does not return
-int parse_options(int argc, char **argv, ping_state_t *state);
+int parse_options(int argc, char **argv);
 
 #endif

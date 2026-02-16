@@ -6,13 +6,13 @@
 char   *ft_strjoin(char const *s1, char const *s2);
 
 // @brief logs the error message and exits with the exit status in 'status' argument
-void   errorLogger(char *program_name, char *message, int status);
+void   errorLogger(char *message, int status);
 
 // @brief displays messages for debugging
 void   debugLogger(char *message);
 
 // @brief displays general info messages
-void   infoLogger(char *program_name, char *message);
+void   infoLogger(char *message);
 
 // @brief displays ping results
 void   resultLogger(char *result);

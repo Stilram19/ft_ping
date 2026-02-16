@@ -20,8 +20,6 @@ typedef struct {
     size_t data_len;         // data length
 } icmp_echo_t;
 
-
-
 typedef struct ping_state {
     uint16_t identifier;
     uint16_t sequence;
@@ -41,9 +39,13 @@ typedef struct ping_state {
     int useless_identifier;            // 1 if kernel overrides ICMP ID, 0 otherwise (1 if the created socket's type is SOCK_DGRAM, 0 if it's SOCK_RAW)
 
     // statistics tracking
-    unsigned long num_sent;            // packets sent
-    unsigned long num_recv;            // packets received
-    unsigned long num_rept;            // duplicate packets
+    unsigned long num_sent;             // packets sent
+    unsigned long num_recv;             // packets received
+    unsigned long num_rept;             // duplicate packets
+    double rrt_sum;                     // sum of all RTTs
+    double rrt_sum_sq;                  // sum of (rrt^2) for variance
+    double rrt_min;                     // minimum rrt 
+    double rrt_max;                     // maximum rrt 
 
     // runtime control
     size_t count;                      // number of packets to send (0 = infinite)
@@ -58,8 +60,7 @@ typedef struct ping_state {
     uint8_t *received;                     // given a sequence you get whether an echo reply packet with the same sequence has been already received (duplicate) 
 } ping_state_t;
 
-
 // @brief ping loop
-void start_pinging(ping_state_t *state);
+void start_pinging(void);
 
 #endif

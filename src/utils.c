@@ -1,11 +1,12 @@
-// #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
 #include <stdint.h>
 #include "utils.h"
-// # include "macros.h"
+#include "ft_ping.h"
+
+extern ping_state_t state;
 
 // @brief function copies up to dstsize - 1 characters 
 // from the NUL-terminated string src to dest, NUL-terminating the result
@@ -27,11 +28,11 @@ static size_t	ft_strlcpy(char *dest, const char *src, size_t dstsize)
 
 // (*) errorLogger
 
-void errorLogger(char *program_name, char *message, int status) {
+void errorLogger(char *message, int status) {
     if (message != NULL) {
-        fprintf(stderr, "%s: %s\n", program_name, message);
+        fprintf(stderr, "%s: %s\n", state.program_name, message);
     } else {
-        fprintf(stderr, "%s: (NULL)\n", program_name);
+        fprintf(stderr, "%s: (NULL)\n", state.program_name);
     }
     exit(status);
 }
@@ -48,12 +49,12 @@ void debugLogger(char *message) {
 
 // (*) infoLogger 
 
-void infoLogger(char *program_name, char *message) {
+void infoLogger(char *message) {
     if (message != NULL) {
-        printf("%s: info: %s\n", program_name, message);
+        printf("%s: info: %s\n", state.program_name, message);
         return ;
     }
-    printf("%s: info: (NULL)\n", program_name);
+    printf("%s: info: (NULL)\n", state.program_name);
 }
 
 // (*) resultLogger

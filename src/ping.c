@@ -14,13 +14,6 @@
 
 extern ping_state_t state;
 
-// @param wait wait in seconds
-// static void waitBetweenPings(float wait) {
-//     struct timespec ts;
-//     ts.tv_sec = (time_t)wait;
-//     ts.tv_nsec = (long)((wait - ts.tv_sec) * 1e9);
-//     nanosleep(&ts, NULL);
-// }
 
 static void first_ping_log() {
     printf("PING %s (%s): %zu data bytes", state.hostname, state.display_address, state.packet.data_len);

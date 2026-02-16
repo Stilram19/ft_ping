@@ -21,7 +21,8 @@ void print_statistics(void) {
     if (state.num_recv > 0) {
         double avg_sec = state.rrt_sum / state.num_recv;
         double variance = (state.rrt_sum_sq / state.num_recv) - (avg_sec * avg_sec);
-        double stddev_sec = sqrt(variance);
+        double variance_clamped = fmax(0.0, variance);
+        double stddev_sec = sqrt(variance_clamped);
 
         printf("round-trip min/avg/max/stddev = %.3f/%.3f/%.3f/%.3f ms\n", 
                state.rrt_min * 1000.0, avg_sec * 1000.0, state.rrt_max * 1000.0, stddev_sec * 1000.0);

@@ -137,7 +137,7 @@ static int handle_echo_reply(struct icmphdr *icmp_header, void *data, size_t dat
         // update statistics trackers (store in seconds to protect from overflow)
         state.rrt_sum += rrt_s;
         state.rrt_sum_sq += rrt_s * rrt_s;
-        if (state.num_recv == 1) {
+        if (state.num_recv == 0) {
             state.rrt_max = rrt_s;
             state.rrt_min = rrt_s;
         } else {

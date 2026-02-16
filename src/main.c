@@ -16,6 +16,7 @@
 ping_state_t state;
 
 int main(int argc, char **argv) {
+    state.program_name = argv[0];
     if (argc == 1) {
         errorLogger("missing host operand\nTry './ft_ping -h' for more information.", EX_USAGE);
     }

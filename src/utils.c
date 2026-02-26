@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include "utils.h"
 #include "ft_ping.h"
+#include "macros.h"
 
 extern ping_state_t state;
 
@@ -40,6 +41,9 @@ void errorLogger(char *message, int status) {
 // (*) debugLogger
 
 void debugLogger(char *message) {
+    if (PROD) {
+        return ;
+    }
     if (message != NULL) {
         printf("debug: %s\n", message);
         return ;

@@ -22,4 +22,6 @@
 
 #define MAX_SEQUENCE 65535
 
+#define PROD 1
+
 #endif

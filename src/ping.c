@@ -98,7 +98,7 @@ void start_pinging() {
                     }
                 }
             } else if (state.quiet == 0 && state.flood == 0 && select_ret < 0 && errno != EINTR) {
-                infoLogger("Select() failed");
+                // infoLogger("Select() failed");
                 break;
             }
         }

@@ -58,9 +58,6 @@ int main(int argc, char **argv) {
         errorLogger("unknown host", EXIT_FAILURE);
     }
 
-    // debugLogger(display_addr);
-
-
     struct sockaddr_in saddr;
 
     memset(&saddr, 0, sizeof(saddr));
@@ -97,6 +94,10 @@ int main(int argc, char **argv) {
         if (!state.packet.data) {
             errorLogger(strerror(errno), EXIT_FAILURE);
         }
+    }
+
+    if (sock_type == SOCK_DGRAM) {
+        infoLogger("Note: raw socket not permitted, using SOCK_DGRAM as a fallback");
     }
 
     // (*) start pinging (ping loop)

@@ -16,8 +16,7 @@ typedef enum {
     PARSE_ERROR,        // failed to parse the packet
 } parse_status_t;
 
-// @brief fills the given request with an ICMP packet 
-// * this function is not responsible of releasing any resources (memory...)
+// @brief fills the state request with an ICMP packet 
 // @return returns ICMP_ERROR in case of error, ICMP_OK otherwise
 int createIcmpEchoRequestMessage(void);
 

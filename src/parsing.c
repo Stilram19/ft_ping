@@ -180,6 +180,7 @@ int parse_options(int argc, char **argv) {
             state.verbose = 1;
         } else if (strcmp(arg, "-V") == 0) {
             display_version();
+            exit(EXIT_SUCCESS);
         } else if (strcmp(arg, "-q") == 0) {
             state.verbose = 0;  // quiet mode (opposite of verbose)
             state.quiet = 1;
